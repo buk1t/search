@@ -6,8 +6,6 @@
     <title>Home</title>
 
     <link rel="stylesheet" href="style.css" />
-    <link rel="preload" href="style.css" as="style" />
-    <link rel="preload" href="script.js" as="script" />
     <link rel="preconnect" href="https://api.open-meteo.com" crossorigin />
     <link rel="dns-prefetch" href="//api.open-meteo.com" />
   </head>
@@ -23,7 +21,6 @@
           <p class="subtitle" id="subtitle"></p>
         </div>
 
-        <!-- Search (same-tab) -->
         <form class="search" id="searchForm" autocomplete="off">
           <input
             class="search-input"
@@ -37,15 +34,12 @@
       </header>
 
       <div class="layout">
-        <!-- Left: all links in one grid -->
         <section class="left">
           <div class="grid">
-            <!-- Row 1: Clever, Schoology, Drive -->
+            <!-- School -->
             <a
               class="card"
               href="https://clever.com/in/pittsburghpublic/student/portal"
-              target="_blank"
-              rel="noopener"
             >
               <div class="card-top">
                 <span class="icon">🎓</span>
@@ -56,8 +50,6 @@
             <a
               class="card"
               href="https://pghschools.schoology.com/home#/?_k=49aepj"
-              target="_blank"
-              rel="noopener"
             >
               <div class="card-top">
                 <span class="icon">📚</span>
@@ -65,25 +57,15 @@
               </div>
             </a>
 
-            <a
-              class="card"
-              href="https://drive.google.com/"
-              target="_blank"
-              rel="noopener"
-            >
+            <a class="card" href="https://drive.google.com/">
               <div class="card-top">
                 <span class="icon">🗂️</span>
                 <div class="card-title">Google Drive</div>
               </div>
             </a>
 
-            <!-- Row 2: College Board, HAC, Outlook -->
-            <a
-              class="card"
-              href="https://my.collegeboard.org/"
-              target="_blank"
-              rel="noopener"
-            >
+            <!-- Accounts -->
+            <a class="card" href="https://my.collegeboard.org/">
               <div class="card-top">
                 <span class="icon">🧠</span>
                 <div class="card-title">College Board</div>
@@ -93,8 +75,6 @@
             <a
               class="card"
               href="https://hac40.pps.k12.pa.us/HomeAccess4_1/Account/LogOn?ReturnUrl=%2fhomeaccess4_1"
-              target="_blank"
-              rel="noopener"
             >
               <div class="card-top">
                 <span class="icon">🧾</span>
@@ -102,123 +82,72 @@
               </div>
             </a>
 
-            <a
-              class="card"
-              href="https://outlook.live.com/mail/0/inbox"
-              target="_blank"
-              rel="noopener"
-            >
+            <a class="card" href="https://outlook.live.com/mail/0/inbox">
               <div class="card-top">
                 <span class="icon">💌</span>
                 <div class="card-title">Outlook</div>
               </div>
             </a>
 
-            <!-- Row 3: Zillow, YouTube, Insta -->
-            <a
-              class="card"
-              href="https://www.zillow.com/"
-              target="_blank"
-              rel="noopener"
-            >
+            <!-- Fun -->
+            <a class="card" href="https://www.zillow.com/">
               <div class="card-top">
                 <span class="icon">🏠</span>
                 <div class="card-title">Zillow</div>
               </div>
             </a>
 
-            <a
-              class="card"
-              href="https://www.youtube.com/"
-              target="_blank"
-              rel="noopener"
-            >
+            <a class="card" href="https://www.youtube.com/">
               <div class="card-top">
                 <span class="icon">▶️</span>
                 <div class="card-title">YouTube</div>
               </div>
             </a>
 
-            <a
-              class="card"
-              href="https://www.instagram.com"
-              target="_blank"
-              rel="noopener"
-            >
+            <a class="card" href="https://www.instagram.com/">
               <div class="card-top">
                 <span class="icon">📸</span>
                 <div class="card-title">Instagram</div>
               </div>
             </a>
 
-            <!-- Row 4: Netflix, HBO, Hulu -->
-            <a
-              class="card"
-              href="https://www.netflix.com/"
-              target="_blank"
-              rel="noopener"
-            >
+            <!-- Streaming -->
+            <a class="card" href="https://www.netflix.com/">
               <div class="card-top">
                 <span class="icon">🍿</span>
                 <div class="card-title">Netflix</div>
               </div>
             </a>
 
-            <a
-              class="card"
-              href="https://play.max.com/"
-              target="_blank"
-              rel="noopener"
-            >
+            <a class="card" href="https://play.max.com/">
               <div class="card-top">
                 <span class="icon">🖤</span>
                 <div class="card-title">HBO Max</div>
               </div>
             </a>
 
-            <a
-              class="card"
-              href="https://www.hulu.com/"
-              target="_blank"
-              rel="noopener"
-            >
+            <a class="card" href="https://www.hulu.com/">
               <div class="card-top">
                 <span class="icon">🟩</span>
                 <div class="card-title">Hulu</div>
               </div>
             </a>
 
-            <!-- Row 5: Disney+, Peacock, Prime -->
-            <a
-              class="card"
-              href="https://www.disneyplus.com/"
-              target="_blank"
-              rel="noopener"
-            >
+            <a class="card" href="https://www.disneyplus.com/">
               <div class="card-top">
                 <span class="icon">✨</span>
                 <div class="card-title">Disney+</div>
               </div>
             </a>
 
-            <a
-              class="card"
-              href="https://www.peacocktv.com/"
-              target="_blank"
-              rel="noopener"
-            >
+            <a class="card" href="https://www.peacocktv.com/">
               <div class="card-top">
                 <span class="icon">🦚</span>
                 <div class="card-title">Peacock</div>
               </div>
             </a>
 
-            <a
-              class="card"
-              href="https://www.primevideo.com/"
-              target="_blank"
-              rel="noopener"
-            >
+            <a class="card" href="https://www.primevideo.com/">
               <div class="card-top">
                 <span class="icon">📦</span>
                 <div class="card-title">Prime Video</div>
@@ -227,7 +156,6 @@
           </div>
         </section>
 
-        <!-- Right: weather + checklist -->
         <aside class="right">
           <div class="panel" id="weatherPanel">
             <div class="panel-head">
@@ -249,7 +177,6 @@
           <div class="panel">
             <div class="panel-head">
               <div class="panel-title">Checklist</div>
-              <button class="smallbtn" id="addBtn" type="button">＋</button>
             </div>
 
             <div class="panel-sub">School stuff (auto-saves)</div>
@@ -261,7 +188,6 @@
               </button>
             </div>
 
-            <!-- Archive popup -->
             <div class="modal" id="archiveModal" aria-hidden="true">
               <div class="modal-backdrop" id="archiveClose"></div>
 

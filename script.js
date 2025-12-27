@@ -1,44 +1,31 @@
-// ============================================================
-// Home page script (ONE file):
-// - Subtitle clock (minute-synced, no drift)
-// - Search bar (same-tab): URL or Google search
-// - Weather (Open-Meteo, no key)
-// - Apple-Notes-ish checklist:
-//    Enter => new row
-//    Backspace on empty => delete row (and focus moves)
-//    Check => auto-archive after 5s
-//    Archive button => modal popup (click outside / Esc to close)
-// ============================================================
+// Home page script
+// - Subtitle clock (minute-synced)
+// - Search bar auto-focus + same-tab navigation
+// - Weather (Open-Meteo)
+// - Checklist with archive modal
 
 const STORE_KEY = "home_tasks_v4";
 
-// ---------- Utils ----------
+// ---------- Small utils ----------
+const $ = (sel) => document.querySelector(sel);
+
 function uuid() {
-  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-  return (
-    "id-" +
-    Date.now().toString(36) +
-    "-" +
-    Math.random().toString(36).slice(2, 10)
-  );
+  return (crypto?.randomUUID?.() || `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 }
 
-function focusInputById(id) {
+function focusInputByTaskId(id) {
   const inp = document.querySelector(`input[data-task-id="${id}"]`);
-  if (inp) {
-    inp.focus();
-    const v = inp.value;
-    try { inp.setSelectionRange(v.length, v.length); } catch {}
-  }
+  if (!inp) return;
+  inp.focus();
+  const v = inp.value || "";
+  try { inp.setSelectionRange(v.length, v.length); } catch {}
 }
 
-// ---------- Subtitle clock (minute-synced) ----------
+// ---------- Subtitle clock ----------
 function setSubtitle() {
-  const el = document.getElementById("subtitle");
+  const el = $("#subtitle");
   if (!el) return;
-
-  const now = new Date();
-  el.textContent = now.toLocaleString(undefined, {
+  el.textContent = new Date().toLocaleString(undefined, {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -47,56 +34,53 @@ function setSubtitle() {
   });
 }
 
-let subtitleTimeout = null;
-let subtitleInterval = null;
-
-function startAccurateSubtitleClock() {
+function startSubtitleClock() {
   setSubtitle();
-  if (subtitleTimeout) clearTimeout(subtitleTimeout);
-  if (subtitleInterval) clearInterval(subtitleInterval);
-
   const now = new Date();
-  const msUntilNextMinute =
-    (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
-
-  subtitleTimeout = setTimeout(() => {
+  const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+  setTimeout(() => {
     setSubtitle();
-    subtitleInterval = setInterval(setSubtitle, 60 * 1000);
+    setInterval(setSubtitle, 60 * 1000);
   }, msUntilNextMinute);
 }
 
-// ---------- Search (same-tab omnibox) ----------
+// ---------- Search ----------
 function isLikelyUrl(text) {
   const s = text.trim();
   if (/^https?:\/\//i.test(s)) return true;
-  if (!/\s/.test(s) && /\.[a-z]{2,}([/:?#]|$)/i.test(s)) return true;
-  return false;
+  return !/\s/.test(s) && /\.[a-z]{2,}([/:?#]|$)/i.test(s);
 }
 
 function normalizeUrl(text) {
   const s = text.trim();
-  if (/^https?:\/\//i.test(s)) return s;
-  return "https://" + s;
+  return /^https?:\/\//i.test(s) ? s : `https://${s}`;
 }
 
-function searchUrl(query) {
-  const q = encodeURIComponent(query.trim());
-  return `https://www.google.com/search?q=${q}`;
+function googleSearchUrl(q) {
+  return `https://www.google.com/search?q=${encodeURIComponent(q.trim())}`;
 }
 
 function initSearch() {
-  const form = document.getElementById("searchForm");
-  const input = document.getElementById("searchInput");
+  const form = $("#searchForm");
+  const input = $("#searchInput");
   if (!form || !input) return;
 
-  // "/" focuses search (unless you're already typing somewhere)
+  // Auto-focus on load (your request)
+  const focusSearch = () => {
+    input.focus({ preventScroll: true });
+    const v = input.value || "";
+    try { input.setSelectionRange(v.length, v.length); } catch {}
+  };
+  requestAnimationFrame(focusSearch);
+  window.addEventListener("load", focusSearch, { once: true });
+
+  // "/" focuses search unless you're typing in another field
   window.addEventListener("keydown", (e) => {
     const tag = (document.activeElement?.tagName || "").toLowerCase();
     const typing = tag === "input" || tag === "textarea";
-
     if (e.key === "/" && !typing) {
       e.preventDefault();
-      input.focus();
+      focusSearch();
     }
   });
 
@@ -105,8 +89,8 @@ function initSearch() {
     const text = (input.value || "").trim();
     if (!text) return;
 
-    // same tab navigation
-    window.location.href = isLikelyUrl(text) ? normalizeUrl(text) : searchUrl(text);
+    // Same-tab navigation (your request)
+    window.location.href = isLikelyUrl(text) ? normalizeUrl(text) : googleSearchUrl(text);
   });
 }
 
@@ -128,10 +112,7 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return defaultState();
-
     const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return defaultState();
-
     return {
       active: Array.isArray(parsed.active) ? parsed.active : defaultState().active,
       archived: Array.isArray(parsed.archived) ? parsed.archived : [],
@@ -147,7 +128,7 @@ function saveState(state) {
 
 // ---------- Checklist render ----------
 function renderActive(state) {
-  const root = document.getElementById("todo");
+  const root = $("#todo");
   if (!root) return;
   root.innerHTML = "";
 
@@ -184,48 +165,33 @@ function renderActive(state) {
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        const newTask = {
-          id: uuid(),
-          text: "",
-          created: Date.now(),
-          checked: false,
-          pendingArchiveAt: null,
-        };
+        const newTask = { id: uuid(), text: "", created: Date.now(), checked: false, pendingArchiveAt: null };
         state.active.splice(idx + 1, 0, newTask);
         saveState(state);
         renderActive(state);
-        requestAnimationFrame(() => focusInputById(newTask.id));
+        requestAnimationFrame(() => focusInputByTaskId(newTask.id));
         return;
       }
 
-      if (e.key === "Backspace") {
-        const val = input.value || "";
-        if (val.length === 0) {
-          if (state.active.length === 1) return;
-          e.preventDefault();
-          state.active.splice(idx, 1);
-          saveState(state);
-          renderActive(state);
-          const target = state.active[Math.max(0, idx - 1)] || state.active[0];
-          requestAnimationFrame(() => focusInputById(target.id));
-          return;
-        }
+      if (e.key === "Backspace" && (input.value || "").length === 0) {
+        if (state.active.length === 1) return;
+        e.preventDefault();
+        state.active.splice(idx, 1);
+        saveState(state);
+        renderActive(state);
+        const target = state.active[Math.max(0, idx - 1)] || state.active[0];
+        requestAnimationFrame(() => focusInputByTaskId(target.id));
+        return;
       }
 
       if (e.key === "ArrowUp") {
         const prev = state.active[idx - 1];
-        if (prev) {
-          e.preventDefault();
-          focusInputById(prev.id);
-        }
+        if (prev) { e.preventDefault(); focusInputByTaskId(prev.id); }
       }
 
       if (e.key === "ArrowDown") {
         const next = state.active[idx + 1];
-        if (next) {
-          e.preventDefault();
-          focusInputById(next.id);
-        }
+        if (next) { e.preventDefault(); focusInputByTaskId(next.id); }
       }
     });
 
@@ -237,20 +203,17 @@ function renderActive(state) {
 }
 
 function renderArchive(state) {
-  const list = document.getElementById("archiveList");
+  const list = $("#archiveList");
   if (!list) return;
 
   if (!state.archived.length) {
-    list.innerHTML = `
-      <div class="archive-row">
-        <div class="archive-text" style="text-decoration:none;opacity:.55;">No completed tasks yet.</div>
-      </div>
-    `;
+    list.innerHTML = `<div class="archive-row">
+      <div class="archive-text" style="text-decoration:none;opacity:.55;">No completed tasks yet.</div>
+    </div>`;
     return;
   }
 
   list.innerHTML = "";
-
   state.archived
     .slice()
     .sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0))
@@ -268,22 +231,11 @@ function renderArchive(state) {
       restore.textContent = "Restore";
       restore.addEventListener("click", () => {
         state.archived = state.archived.filter((x) => x.id !== t.id);
-        state.active.unshift({
-          id: t.id,
-          text: t.text,
-          created: t.created || Date.now(),
-          checked: false,
-          pendingArchiveAt: null,
-        });
-
-        if (!state.active.length) {
-          state.active = [{ id: uuid(), text: "", created: Date.now(), checked: false, pendingArchiveAt: null }];
-        }
-
+        state.active.unshift({ id: t.id, text: t.text, created: t.created || Date.now(), checked: false, pendingArchiveAt: null });
         saveState(state);
         renderArchive(state);
         renderActive(state);
-        requestAnimationFrame(() => focusInputById(t.id));
+        requestAnimationFrame(() => focusInputByTaskId(t.id));
       });
 
       const del = document.createElement("button");
@@ -310,12 +262,7 @@ function tickArchive(state) {
   const remaining = [];
   for (const t of state.active) {
     if (t.checked && t.pendingArchiveAt && now >= t.pendingArchiveAt) {
-      state.archived.push({
-        id: t.id,
-        text: t.text,
-        created: t.created,
-        archivedAt: now,
-      });
+      state.archived.push({ id: t.id, text: t.text, created: t.created, archivedAt: now });
       moved = true;
     } else {
       remaining.push(t);
@@ -323,35 +270,23 @@ function tickArchive(state) {
   }
 
   if (moved) {
-    state.active = remaining.length
-      ? remaining
-      : [{ id: uuid(), text: "", created: Date.now(), checked: false, pendingArchiveAt: null }];
-
+    state.active = remaining.length ? remaining : [{ id: uuid(), text: "", created: Date.now(), checked: false, pendingArchiveAt: null }];
     saveState(state);
     renderActive(state);
     renderArchive(state);
   }
 }
 
-// ---------- Modal controls ----------
-function openArchive() {
-  const modal = document.getElementById("archiveModal");
-  if (!modal) return;
-  modal.setAttribute("aria-hidden", "false");
-}
+// ---------- Modal ----------
+function openArchive() { $("#archiveModal")?.setAttribute("aria-hidden", "false"); }
+function closeArchive() { $("#archiveModal")?.setAttribute("aria-hidden", "true"); }
 
-function closeArchive() {
-  const modal = document.getElementById("archiveModal");
-  if (!modal) return;
-  modal.setAttribute("aria-hidden", "true");
-}
-
-// ---------- Weather (Open-Meteo, no key) ----------
+// ---------- Weather ----------
 function wxFromCode(code) {
   if (code === 0) return { e: "☀️", d: "Clear" };
-  if ([1, 2].includes(code)) return { e: "🌤️", d: "Partly cloudy" };
+  if (code === 1 || code === 2) return { e: "🌤️", d: "Partly cloudy" };
   if (code === 3) return { e: "☁️", d: "Cloudy" };
-  if ([45, 48].includes(code)) return { e: "🌫️", d: "Fog" };
+  if (code === 45 || code === 48) return { e: "🌫️", d: "Fog" };
   if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return { e: "🌧️", d: "Rain" };
   if ([71, 73, 75, 77, 85, 86].includes(code)) return { e: "🌨️", d: "Snow" };
   if ([95, 96, 99].includes(code)) return { e: "⛈️", d: "Thunderstorms" };
@@ -370,10 +305,10 @@ async function loadWeather() {
     `&temperature_unit=fahrenheit&wind_speed_unit=mph` +
     `&timezone=America%2FNew_York`;
 
-  const tempEl = document.getElementById("wxTemp");
-  const descEl = document.getElementById("wxDesc");
-  const emojiEl = document.getElementById("wxEmoji");
-  const miniEl = document.getElementById("wxMini");
+  const tempEl = $("#wxTemp");
+  const descEl = $("#wxDesc");
+  const emojiEl = $("#wxEmoji");
+  const miniEl = $("#wxMini");
 
   try {
     const res = await fetch(url, { cache: "no-store" });
@@ -385,17 +320,13 @@ async function loadWeather() {
     const t = Math.round(cur.temperature_2m);
     const feels = Math.round(cur.apparent_temperature);
     const wind = Math.round(cur.wind_speed_10m);
-    const code = cur.weather_code;
+    const wx = wxFromCode(cur.weather_code);
 
     const hi = Math.round(daily.temperature_2m_max?.[0]);
     const lo = Math.round(daily.temperature_2m_min?.[0]);
 
-    const wx = wxFromCode(code);
-
     if (tempEl) tempEl.textContent = `${t}°`;
     if (emojiEl) emojiEl.textContent = wx.e;
-
-    // You said you might hide this in CSS; still set it safely
     if (descEl) descEl.textContent = `${wx.d} • Feels like ${feels}°`;
 
     if (miniEl) {
@@ -410,10 +341,19 @@ async function loadWeather() {
   }
 }
 
+// ---------- Link cards (same-tab) ----------
+function forceCardsSameTab() {
+  document.querySelectorAll("a.card").forEach((a) => {
+    a.removeAttribute("target");
+    a.removeAttribute("rel");
+  });
+}
+
 // ---------- Init ----------
 (function init() {
-  startAccurateSubtitleClock();
+  startSubtitleClock();
   initSearch();
+  forceCardsSameTab();
 
   const state = loadState();
   saveState(state);
@@ -421,12 +361,9 @@ async function loadWeather() {
   renderActive(state);
   renderArchive(state);
 
-  document.getElementById("archiveBtn")?.addEventListener("click", openArchive);
-  document.getElementById("archiveClose")?.addEventListener("click", closeArchive);
-
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeArchive();
-  });
+  $("#archiveBtn")?.addEventListener("click", openArchive);
+  $("#archiveClose")?.addEventListener("click", closeArchive);
+  window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeArchive(); });
 
   setInterval(() => tickArchive(state), 300);
 
@@ -434,7 +371,7 @@ async function loadWeather() {
   setInterval(loadWeather, 20 * 60 * 1000);
 })();
 
-// Service worker (for fast loads after first visit)
+// Service worker
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 }

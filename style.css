@@ -329,20 +329,6 @@ body {
 
 /* ---------- Buttons ---------- */
 
-.smallbtn {
-  appearance: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
-  border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-}
-
-.smallbtn:hover {
-  background: rgba(255, 255, 255, 0.75);
-}
-
 .ghostbtn {
   appearance: none;
   padding: 10px 12px;
