@@ -1,28 +1,56 @@
-const CACHE = "home-v2";
-const ASSETS = ["./", "./index.html", "./style.css", "./script.js", "./sw.js"];
+const CACHE = "home-2.1.0";
 
+const CORE = [
+  "./",
+  "./index.html",
+  "./style.css",
+  "./script.js",
+  "./sw.js",
+  "./assets/fonts/Inter-roman.ttf",
+  "./assets/fonts/Inter-italic.ttf", // delete this line if you didn't keep italic
+];
+
+// Install: pre-cache core, then activate immediately
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
-  self.skipWaiting();
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    await c.addAll(CORE);
+    await self.skipWaiting();
+  })());
 });
 
+// Activate: clean old caches
 self.addEventListener("activate", (e) => {
-  e.waitUntil(self.clients.claim());
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
 
+// Fetch: stale-while-revalidate for same-origin GET requests.
+// Cross-origin (like open-meteo) goes straight to network.
 self.addEventListener("fetch", (e) => {
   const req = e.request;
+  if (req.method !== "GET") return;
+
   const url = new URL(req.url);
 
-  if (req.method === "GET" && url.origin === location.origin) {
-    e.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) return cached;
-        return fetch(req).then((res) => {
-          caches.open(CACHE).then((c) => c.put(req, res.clone()));
-          return res;
-        });
-      })
-    );
-  }
+  if (url.origin !== self.location.origin) return;
+
+  e.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(req);
+
+    const fetchPromise = fetch(req).then((res) => {
+      // Only cache successful, basic responses
+      if (res && res.status === 200 && res.type === "basic") {
+        cache.put(req, res.clone());
+      }
+      return res;
+    }).catch(() => cached);
+
+    // Return cached immediately if present, update in background
+    return cached || fetchPromise;
+  })());
 });

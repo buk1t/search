@@ -3,23 +3,29 @@
 // - Search bar auto-focus + same-tab navigation
 // - Weather (Open-Meteo)
 // - Checklist with archive modal
+// - Service worker registration
 
-const STORE_KEY = "home_tasks_v4";
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "2.0.0";
+const STORE_KEY = "home.state.v1";
 
 // ---------- Small utils ----------
 const $ = (sel) => document.querySelector(sel);
 
 function uuid() {
-  return (crypto?.randomUUID?.() || `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
+  return (
+    crypto?.randomUUID?.() ||
+    `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+  );
 }
 
 function focusInputByTaskId(id) {
   const inp = document.querySelector(`input[data-task-id="${id}"]`);
   if (!inp) return;
-  inp.focus();
+  inp.focus({ preventScroll: true });
   const v = inp.value || "";
-  try { inp.setSelectionRange(v.length, v.length); } catch {}
+  try {
+    inp.setSelectionRange(v.length, v.length);
+  } catch {}
 }
 
 // ---------- Subtitle clock ----------
@@ -38,7 +44,9 @@ function setSubtitle() {
 function startSubtitleClock() {
   setSubtitle();
   const now = new Date();
-  const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+  const msUntilNextMinute =
+    (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+
   setTimeout(() => {
     setSubtitle();
     setInterval(setSubtitle, 60 * 1000);
@@ -66,16 +74,18 @@ function initSearch() {
   const input = $("#searchInput");
   if (!form || !input) return;
 
-  // Auto-focus on load (your request)
   const focusSearch = () => {
     input.focus({ preventScroll: true });
     const v = input.value || "";
-    try { input.setSelectionRange(v.length, v.length); } catch {}
+    try {
+      input.setSelectionRange(v.length, v.length);
+    } catch {}
   };
+
   requestAnimationFrame(focusSearch);
   window.addEventListener("load", focusSearch, { once: true });
 
-  // "/" focuses search unless you're typing in another field
+  // "/" focuses search unless typing in another field
   window.addEventListener("keydown", (e) => {
     const tag = (document.activeElement?.tagName || "").toLowerCase();
     const typing = tag === "input" || tag === "textarea";
@@ -90,8 +100,9 @@ function initSearch() {
     const text = (input.value || "").trim();
     if (!text) return;
 
-    // Same-tab navigation (your request)
-    window.location.href = isLikelyUrl(text) ? normalizeUrl(text) : googleSearchUrl(text);
+    window.location.href = isLikelyUrl(text)
+      ? normalizeUrl(text)
+      : googleSearchUrl(text);
   });
 }
 
@@ -124,7 +135,9 @@ function loadState() {
 }
 
 function saveState(state) {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch {}
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  } catch {}
 }
 
 // ---------- Checklist render ----------
@@ -187,12 +200,18 @@ function renderActive(state) {
 
       if (e.key === "ArrowUp") {
         const prev = state.active[idx - 1];
-        if (prev) { e.preventDefault(); focusInputByTaskId(prev.id); }
+        if (prev) {
+          e.preventDefault();
+          focusInputByTaskId(prev.id);
+        }
       }
 
       if (e.key === "ArrowDown") {
         const next = state.active[idx + 1];
-        if (next) { e.preventDefault(); focusInputByTaskId(next.id); }
+        if (next) {
+          e.preventDefault();
+          focusInputByTaskId(next.id);
+        }
       }
     });
 
@@ -232,7 +251,13 @@ function renderArchive(state) {
       restore.textContent = "Restore";
       restore.addEventListener("click", () => {
         state.archived = state.archived.filter((x) => x.id !== t.id);
-        state.active.unshift({ id: t.id, text: t.text, created: t.created || Date.now(), checked: false, pendingArchiveAt: null });
+        state.active.unshift({
+          id: t.id,
+          text: t.text,
+          created: t.created || Date.now(),
+          checked: false,
+          pendingArchiveAt: null,
+        });
         saveState(state);
         renderArchive(state);
         renderActive(state);
@@ -271,7 +296,11 @@ function tickArchive(state) {
   }
 
   if (moved) {
-    state.active = remaining.length ? remaining : [{ id: uuid(), text: "", created: Date.now(), checked: false, pendingArchiveAt: null }];
+    state.active =
+      remaining.length
+        ? remaining
+        : [{ id: uuid(), text: "", created: Date.now(), checked: false, pendingArchiveAt: null }];
+
     saveState(state);
     renderActive(state);
     renderArchive(state);
@@ -279,8 +308,12 @@ function tickArchive(state) {
 }
 
 // ---------- Modal ----------
-function openArchive() { $("#archiveModal")?.setAttribute("aria-hidden", "false"); }
-function closeArchive() { $("#archiveModal")?.setAttribute("aria-hidden", "true"); }
+function openArchive() {
+  $("#archiveModal")?.setAttribute("aria-hidden", "false");
+}
+function closeArchive() {
+  $("#archiveModal")?.setAttribute("aria-hidden", "true");
+}
 
 // ---------- Weather ----------
 function wxFromCode(code) {
@@ -342,23 +375,13 @@ async function loadWeather() {
   }
 }
 
-// ---------- Link cards (same-tab) ----------
-function forceCardsSameTab() {
-  document.querySelectorAll("a.card").forEach((a) => {
-    a.removeAttribute("target");
-    a.removeAttribute("rel");
-  });
-}
-
 // ---------- Init ----------
 (function init() {
-  // Set version label (GitHub Pages sanity check)
   const v = document.getElementById("version");
   if (v) v.textContent = `v${APP_VERSION}`;
 
   startSubtitleClock();
   initSearch();
-  forceCardsSameTab();
 
   const state = loadState();
   saveState(state);
@@ -372,7 +395,8 @@ function forceCardsSameTab() {
     if (e.key === "Escape") closeArchive();
   });
 
-  setInterval(() => tickArchive(state), 300);
+  // 500ms is plenty and reduces churn vs 300ms
+  setInterval(() => tickArchive(state), 500);
 
   loadWeather();
   setInterval(loadWeather, 20 * 60 * 1000);
@@ -382,5 +406,3 @@ function forceCardsSameTab() {
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 }
-
-document.getElementById("version").textContent = `v${APP_VERSION}`;
