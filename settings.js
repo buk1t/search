@@ -1,5 +1,6 @@
 // settings.js
 
+const THEME_KEY = "home.theme.v1";
 const STORE_KEY = "home.state.v1";
 const LINKS_KEY = "home.links.v1";
 const WEATHER_KEY = "home.weather.v1";
@@ -50,7 +51,9 @@ function listPrefixedKeys(prefix) {
 }
 
 function exportSettingsPlainText() {
-  const keys = listPrefixedKeys(EXPORT_PREFIX);
+  const keys = Array.from(
+  new Set([...listPrefixedKeys(EXPORT_PREFIX), THEME_KEY])
+  ).sort();
 
   const meta = [
     "# buk1t-home settings export",

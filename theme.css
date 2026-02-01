@@ -1,0 +1,160 @@
+/* theme.css — compact theme editor UI */
+
+.theme-layout {
+  align-items: start;
+}
+
+#controls {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+/* scheme toggle row */
+.scheme-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.scheme-row .panel-sub {
+  margin-top: 0;
+}
+
+/* section wrapper */
+.theme-section {
+  border-radius: 20px;
+  border: 1px solid var(--stroke);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 12px;
+}
+
+/* collapsible header */
+.theme-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.theme-section-title {
+  display: grid;
+  gap: 2px;
+}
+
+.theme-section-title .name {
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+.theme-section-title .hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.theme-caret {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: var(--surface-quiet);
+  display: grid;
+  place-items: center;
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.theme-section[aria-expanded="true"] .theme-caret {
+  transform: rotate(180deg);
+  border-color: var(--stroke-strong);
+}
+
+.theme-section-body {
+  margin-top: 10px;
+  display: none;
+}
+
+.theme-section[aria-expanded="true"] .theme-section-body {
+  display: block;
+}
+
+/* compact grid */
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 820px) {
+  .theme-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* token card */
+.theme-tile {
+  border-radius: 16px;
+  border: 1px solid var(--stroke);
+  background: var(--surface-quiet);
+  padding: 10px 10px 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.theme-tile-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.theme-label {
+  font-weight: 750;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+.theme-var {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.theme-inputrow {
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  gap: 8px;
+  align-items: center;
+}
+
+.theme-text {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--stroke);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  font-size: 12px;
+}
+
+.theme-text:focus {
+  border-color: var(--stroke-strong);
+}
+
+.theme-color {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--stroke);
+  background: var(--surface);
+  padding: 0;
+  cursor: pointer;
+}

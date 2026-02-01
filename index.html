@@ -4,6 +4,29 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Home</title>
+
+    <script>
+      (function () {
+        const THEME_KEY = "home.theme.v1";
+        try {
+          const raw = localStorage.getItem(THEME_KEY);
+          if (!raw) return;
+
+          const theme = JSON.parse(raw);
+          const isDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+          const vars = (isDark ? theme?.dark?.vars : theme?.light?.vars) || {};
+          const root = document.documentElement;
+
+          for (const [k, v] of Object.entries(vars)) {
+            root.style.setProperty(k, String(v));
+          }
+        } catch {}
+      })();
+    </script>
+
     <link
       rel="icon"
       type="image/png"
@@ -29,6 +52,7 @@
       rel="manifest"
       href="https://api.buk1t.com/favicon/site.webmanifest"
     />
+
     <link rel="stylesheet" href="style.css" />
     <link rel="preconnect" href="https://api.open-meteo.com" crossorigin />
     <link rel="dns-prefetch" href="//api.open-meteo.com" />
@@ -62,7 +86,6 @@
               ← buk1t.com
             </a>
             <a class="iconbtn" href="./settings" aria-label="Settings">
-              <!-- gear icon -->
               <svg
                 class="ico"
                 viewBox="0 0 24 24"
@@ -100,6 +123,7 @@
           </form>
         </div>
       </header>
+
       <div class="layout">
         <section class="left">
           <div class="grid" id="linksGrid"></div>
@@ -130,6 +154,7 @@
 
             <div class="panel-sub">(auto-saves)</div>
             <div class="todo todo-lines" id="todo"></div>
+
             <div class="modal" id="archiveModal" aria-hidden="true">
               <div class="modal-backdrop" id="archiveClose"></div>
 
@@ -153,7 +178,9 @@
         </aside>
       </div>
     </main>
+
     <div class="version" id="version"></div>
+
     <script src="version.js"></script>
     <script src="icons.js"></script>
     <script src="script.js"></script>

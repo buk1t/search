@@ -10,6 +10,9 @@ const CORE = [
   "./settings.js",
   "./version.js",
   "./icons.js",
+  "./theme.html",
+  "./theme.css",
+  "./theme.js",
   "./assets/fonts/Inter-roman.ttf",
   "./assets/fonts/Inter-italic.ttf", // delete this line if you didn't keep italic
 ];

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Theme</title>
+
+    <script>
+      (function () {
+        const THEME_KEY = "home.theme.v1";
+        try {
+          const raw = localStorage.getItem(THEME_KEY);
+          if (!raw) return;
+
+          const theme = JSON.parse(raw);
+          const isDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+          const vars = (isDark ? theme?.dark?.vars : theme?.light?.vars) || {};
+          const root = document.documentElement;
+
+          for (const [k, v] of Object.entries(vars)) {
+            root.style.setProperty(k, String(v));
+          }
+        } catch {}
+      })();
+    </script>
+
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="theme.css" />
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://api.buk1t.com/favicon/favicon-96x96.png"
+      sizes="96x96"
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="https://api.buk1t.com/favicon/favicon.svg"
+    />
+    <link
+      rel="shortcut icon"
+      href="https://api.buk1t.com/favicon/favicon.ico"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="https://api.buk1t.com/favicon/apple-touch-icon.png"
+    />
+    <meta name="apple-mobile-web-app-title" content="MyWebSite" />
+    <link
+      rel="manifest"
+      href="https://api.buk1t.com/favicon/site.webmanifest"
+    />
+  </head>
+
+  <body>
+    <div class="bg"></div>
+    <div class="overlay"></div>
+
+    <main class="wrap">
+      <header class="top">
+        <div class="top-left">
+          <h1 class="title">Theme</h1>
+          <p class="subtitle" id="themeSubtitle">Preview + save themes.</p>
+        </div>
+
+        <div class="top-right">
+          <div class="top-actions" style="justify-content: flex-end">
+            <a class="back-link" href="./settings">← Settings</a>
+            <a class="back-link" href="./">← Home</a>
+          </div>
+        </div>
+      </header>
+
+      <div class="layout theme-layout">
+        <section class="left">
+          <div class="grid theme-grid">
+            <a class="card" href="javascript:void(0)">
+              <div class="card-top">
+                <span class="icon" aria-hidden="true">
+                  <svg
+                    class="ico"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="3" y="7" width="18" height="12" rx="2"></rect>
+                    <path d="M8 21h8"></path>
+                  </svg>
+                </span>
+                <div class="card-title">Card preview</div>
+              </div>
+            </a>
+
+            <a class="card" href="javascript:void(0)">
+              <div class="card-top">
+                <span class="icon" aria-hidden="true">
+                  <svg
+                    class="ico"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7v6l4 2"></path>
+                  </svg>
+                </span>
+                <div class="card-title">Another card</div>
+              </div>
+            </a>
+
+            <a class="card" href="javascript:void(0)">
+              <div class="card-top">
+                <span class="icon" aria-hidden="true">
+                  <svg
+                    class="ico"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M12 2l3 7 7 .5-5.5 4.5 2 7-6.5-4-6.5 4 2-7L2 9.5 9 9z"
+                    ></path>
+                  </svg>
+                </span>
+                <div class="card-title">Hover me</div>
+              </div>
+            </a>
+          </div>
+
+          <div class="panel" style="margin-top: 14px">
+            <div class="panel-head">
+              <div class="panel-title">Example themes</div>
+              <div class="pill" id="statusPill">Live</div>
+            </div>
+            <div class="panel-sub">Click a preset to preview instantly.</div>
+
+            <div class="panel-actions" id="presetRow"></div>
+          </div>
+
+          <div class="panel" style="margin-top: 14px">
+            <div class="panel-head">
+              <div class="panel-title">Adjust tokens</div>
+              <button class="ghostbtn" id="toggleAdvanced" type="button">
+                Advanced
+              </button>
+            </div>
+            <div class="panel-sub">
+              Edits apply instantly; Save writes to this browser.
+            </div>
+
+            <div id="controls"></div>
+
+            <div class="panel-actions" style="margin-top: 12px">
+              <button class="ghostbtn" id="saveBtn" type="button">Save</button>
+              <button class="ghostbtn" id="resetBtn" type="button">
+                Reset
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <aside class="right">
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Weather</div>
+              <div class="pill">Seattle</div>
+            </div>
+
+            <div class="weather-main">
+              <div class="weather-big">
+                <span class="weather-emoji">⛅️</span>
+                <span class="weather-temp">42°</span>
+              </div>
+
+              <div class="weather-sub">Partly cloudy • Feels like 39°</div>
+              <div class="weather-mini">
+                <span class="weather-chip">H: 46°</span>
+                <span class="weather-chip">L: 31°</span>
+                <span class="weather-chip">Wind: 8 mph</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Checklist</div>
+            </div>
+
+            <div class="panel-sub">(preview)</div>
+            <div class="todo todo-lines">
+              <div class="todo-item">
+                <input type="checkbox" />
+                <div class="todo-text">
+                  <input type="text" value="Make themes editable" />
+                </div>
+              </div>
+              <div class="todo-item done">
+                <input type="checkbox" checked />
+                <div class="todo-text">
+                  <input type="text" value="Build presets" />
+                </div>
+              </div>
+              <div class="todo-item">
+                <input type="checkbox" />
+                <div class="todo-text">
+                  <input type="text" value="Ship it" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <div class="version" id="version"></div>
+    <script src="version.js"></script>
+    <script src="theme.js"></script>
+  </body>
+</html>
