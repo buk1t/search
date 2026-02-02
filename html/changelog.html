@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Changelog</title>
+
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/changelog.css" />
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://api.buk1t.com/favicon/favicon-96x96.png"
+      sizes="96x96"
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="https://api.buk1t.com/favicon/favicon.svg"
+    />
+    <link
+      rel="shortcut icon"
+      href="https://api.buk1t.com/favicon/favicon.ico"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="https://api.buk1t.com/favicon/apple-touch-icon.png"
+    />
+    <meta name="apple-mobile-web-app-title" content="MyWebSite" />
+    <link
+      rel="manifest"
+      href="https://api.buk1t.com/favicon/site.webmanifest"
+    />
+  </head>
+
+  <body>
+    <div class="bg"></div>
+    <div class="overlay"></div>
+
+    <main class="wrap">
+      <header class="top">
+        <div class="brand">
+          <div class="title">Changelog</div>
+          <div class="subtitle">What changed, when, and why.</div>
+        </div>
+
+        <!-- This matches your existing pattern -->
+        <div class="version" id="version"></div>
+      </header>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Major updates</div>
+          <div class="panel-sub" id="updatedNote">Latest: —</div>
+        </div>
+
+        <div id="changelogList" class="changelog"></div>
+
+        <div class="changelog-footer">
+          <a class="ghostlink" href="/">← Back home</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="/js/version.js"></script>
+    <script src="/js/changelog.js"></script>
+  </body>
+</html>

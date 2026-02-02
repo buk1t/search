@@ -1,3 +1,14 @@
 {
-  "cleanUrls": true
+  "rewrites": [
+    { "source": "/", "destination": "/html/index.html" },
+
+    { "source": "/settings", "destination": "/html/settings.html" },
+    { "source": "/settings/", "destination": "/html/settings.html" },
+
+    { "source": "/theme", "destination": "/html/theme.html" },
+    { "source": "/theme/", "destination": "/html/theme.html" },
+
+    { "source": "/changelog", "destination": "/html/changelog.html" },
+    { "source": "/changelog/", "destination": "/html/changelog.html" }
+  ]
 }

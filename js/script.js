@@ -209,7 +209,7 @@ function renderLinksGrid() {
   root.innerHTML = "";
 
   if (!links.length) {
-    root.innerHTML = `<a class="card" href="./settings.html">
+    root.innerHTML = `<a class="card" href="/settings">
       <div class="card-top">
         <span class="icon" aria-hidden="true">${iconSvg("link")}</span>
         <div class="card-title">Add links in Settings</div>
@@ -223,11 +223,11 @@ function renderLinksGrid() {
     let url = (l.url || "").trim();
 
     // If it's blank, send them to Settings so it doesn't feel dead.
-    if (!url) url = "./settings.html";
+    if (!url) url = "/settings";
 
     // If user omitted scheme but it looks like a domain, fix it.
-    if (url !== "./settings.html" && !/^https?:\/\//i.test(url) && url.includes(".")) {
-      url = "https://" + url;
+    if (url !== "/settings" && !/^https?:\/\//i.test(url) && url.includes(".")) {
+    url = "https://" + url;
     }
 
     const a = document.createElement("a");
@@ -582,5 +582,5 @@ async function loadWeather() {
 
 // Service worker
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js").catch(() => {});
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
 }

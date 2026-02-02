@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: "Inter";
-  src: url("assets/fonts/Inter-roman.ttf") format("truetype");
+  src: url("/assets/fonts/Inter-roman.ttf") format("truetype");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
@@ -12,7 +12,7 @@
 
 @font-face {
   font-family: "Inter";
-  src: url("assets/fonts/Inter-italic.ttf") format("truetype");
+  src: url("/assets/fonts/Inter-italic.ttf") format("truetype");
   font-weight: 100 900;
   font-style: italic;
   font-display: swap;
@@ -947,4 +947,91 @@ svg {
 .ico.fill * {
   fill: currentColor !important;
   stroke: none !important;
+}
+
+/* version pill (used in header) */
+.version-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: linear-gradient(180deg, var(--card), var(--card2));
+  box-shadow: var(--shadow);
+  color: var(--text);
+  text-decoration: none;
+  user-select: none;
+}
+
+.version-pill .v {
+  font-weight: 650;
+  letter-spacing: 0.2px;
+}
+
+.version-pill .dot,
+.version-pill .t {
+  color: var(--muted);
+}
+
+.version-pill:hover {
+  border-color: var(--stroke-strong);
+  transform: translateY(-0.5px);
+}
+
+.version-pill:active {
+  transform: translateY(0px);
+}
+
+/* Make sure overlays don't eat clicks */
+.bg,
+.overlay {
+  pointer-events: none;
+}
+
+/* Ensure header content is above any decorative layers */
+.wrap,
+.top {
+  position: relative;
+  z-index: 5;
+}
+
+/* If you ever set pointer-events:none on header stuff, this fixes it */
+.version,
+.version * {
+  pointer-events: auto;
+}
+
+/* The pill itself */
+.version-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: linear-gradient(180deg, var(--card), var(--card2));
+  box-shadow: var(--shadow);
+  color: var(--text);
+  text-decoration: none;
+  user-select: none;
+}
+
+.version-pill .v {
+  font-weight: 650;
+  letter-spacing: 0.2px;
+}
+
+.version-pill .dot,
+.version-pill .t {
+  color: var(--muted);
+}
+
+.version-pill:hover {
+  border-color: var(--stroke-strong);
+  transform: translateY(-0.5px);
+}
+
+.version-pill:active {
+  transform: translateY(0px);
 }

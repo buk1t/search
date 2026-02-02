@@ -1,20 +1,29 @@
-const CACHE = "home-3.4.1";
+const CACHE = "home-5.0.0";
 
 const CORE = [
-  "./",
-  "./index.html",
-  "./style.css",
-  "./script.js",
-  "./sw.js",
-  "./settings.html",
-  "./settings.js",
-  "./version.js",
-  "./icons.js",
-  "./theme.html",
-  "./theme.css",
-  "./theme.js",
-  "./assets/fonts/Inter-roman.ttf",
-  "./assets/fonts/Inter-italic.ttf", // delete this line if you didn't keep italic
+  "/",
+  "/html/index.html",
+  "/css/style.css",
+  "/js/script.js",
+
+  "/sw.js",
+
+  "/html/settings.html",
+  "/js/settings.js",
+
+  "/js/version.js",
+  "/js/icons.js",
+
+  "/html/theme.html",
+  "/css/theme.css",
+  "/js/theme.js",
+
+  "/html/changelog.html",
+  "/css/changelog.css",
+  "/js/changelog.js",
+
+  "/assets/fonts/Inter-roman.ttf",
+  "/assets/fonts/Inter-italic.ttf"
 ];
 
 // Install: pre-cache core, then activate immediately
