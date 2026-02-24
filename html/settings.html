@@ -1,9 +1,11 @@
+<!-- /settings.html -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Settings</title>
+
     <script>
       (function () {
         const THEME_KEY = "home.theme.v1";
@@ -45,7 +47,7 @@
       <header class="top">
         <div class="top-left">
           <h1 class="title">Settings</h1>
-          <p class="subtitle">Customize links, weather, time, and search.</p>
+          <p class="subtitle">Customize links, weather, and search.</p>
         </div>
       </header>
 
@@ -75,8 +77,7 @@
             <div id="cityResults" style="margin-top: 12px"></div>
           </div>
 
-          <!-- Search engine -->
-          <div class="panel">
+          <div class="panel" style="margin-top: 14px">
             <div class="panel-head">
               <div class="panel-title">Search engine</div>
               <div class="pill" id="currentSearchPill">Google</div>
@@ -109,6 +110,7 @@
               </div>
             </div>
           </div>
+
           <div class="panel" style="margin-top: 14px">
             <div class="panel-head">
               <div class="panel-title">Links grid</div>
@@ -157,38 +159,26 @@
           <div class="panel">
             <div class="panel-head">
               <div class="panel-title">Archive</div>
-            </div>
-            <div class="panel-sub">Quickly clear completed tasks.</div>
 
-            <div style="margin-top: 12px">
-              <button class="ghostbtn" id="archiveBtn" type="button">
-                Open archive
-              </button>
-            </div>
-
-            <div class="panel-sub" style="margin-top: 12px; opacity: 0.7">
-              (Archive UI lives on the Home page.)
-            </div>
-          </div>
-
-          <div class="panel" style="margin-top: 14px">
-            <div class="panel-head">
-              <div class="panel-title">About</div>
-            </div>
-            <div class="panel-sub">Version + changelog.</div>
-
-            <div style="margin-top: 12px; display: flex; gap: 10px">
-              <a
-                class="ghostbtn"
-                href="/changelog"
-                style="text-decoration: none"
-                >Changelog</a
-              >
+              <div style="display: flex; gap: 10px; align-items: center">
+                <button class="ghostbtn" id="archiveRefreshBtn" type="button">
+                  Refresh
+                </button>
+                <button class="ghostbtn" id="archiveClearBtn" type="button">
+                  Clear all
+                </button>
+              </div>
             </div>
 
-            <div class="panel-sub" style="margin-top: 12px; opacity: 0.75">
-              <span id="versionInline"></span>
+            <div class="panel-sub">
+              Completed tasks live here. Restore or delete.
             </div>
+
+            <div
+              class="archive-list"
+              id="archiveList"
+              style="margin-top: 12px"
+            ></div>
           </div>
         </aside>
       </div>

@@ -1,9 +1,15 @@
 // changelog.js — render major updates
 
 const ENTRIES = [
+   {
+    version: "v6.1",
+    title: "Quick Fix",
+    date: "02/23/26", // optional
+    bullets: ["Fixed notes archive bug", "Minor debugging throughout"],
+  },
   {
     version: "v6.0",
-    title: "Added changelog",
+    title: "Debugging + Navigation",
     date: "02/23/26", // optional
     bullets: ["Debugged errors on theme page as well as adding more presets", "Fixed navigation between pages", "Allow used to choose search engine"],
   },

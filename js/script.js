@@ -1,19 +1,14 @@
-// Home page script
-// - Subtitle clock (minute-synced)
-// - Search bar auto-focus + same-tab navigation
-// - Weather (Open-Meteo) + custom city via Settings
-// - Links grid rendered from localStorage (editable via Settings)
-// - Checklist with archive modal
-// - Service worker registration
+// /js/script.js
+// Home page logic: links grid + checklist (auto-archive) + weather + subtitle clock + search (uses search engine pref)
 
-const STORE_KEY = "home.state.v1";      // checklist state
-const LINKS_KEY = "home.links.v1";      // links grid
-const WEATHER_KEY = "home.weather.v1";  // custom city (lat/lon/tz/name)
-const SEARCH_KEY = "home.search.v1";    // search engine prefs
+const STORE_KEY = "home.state.v1";
+const LINKS_KEY = "home.links.v1";
+const WEATHER_KEY = "home.weather.v1";
+const SEARCH_KEY = "home.search.v1";
 
-// ---------- Small utils ----------
 const $ = (sel) => document.querySelector(sel);
 
+// ---------- utils ----------
 function uuid() {
   return (
     crypto?.randomUUID?.() ||
@@ -44,14 +39,68 @@ function escapeHtml(s) {
     .replaceAll('"', "&quot;");
 }
 
-function focusInputByTaskId(id) {
-  const inp = document.querySelector(`input[data-task-id="${id}"]`);
-  if (!inp) return;
-  inp.focus({ preventScroll: true });
-  const v = inp.value || "";
-  try {
-    inp.setSelectionRange(v.length, v.length);
-  } catch {}
+function isLikelyUrl(text) {
+  const s = String(text || "").trim();
+  if (!s) return false;
+  if (/^https?:\/\//i.test(s)) return true;
+  return !/\s/.test(s) && /\.[a-z]{2,}([/:?#]|$)/i.test(s);
+}
+
+function normalizeUrl(text) {
+  const s = String(text || "").trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+  return `https://${s}`;
+}
+
+// ---------- Search engine prefs (read-only on Home) ----------
+function defaultSearchPrefs() {
+  return {
+    engine: "google",
+    customTemplate: "https://www.google.com/search?q={q}",
+  };
+}
+
+function getSearchPrefs() {
+  const prefs = loadJSON(SEARCH_KEY, null);
+  if (!prefs || typeof prefs !== "object") return defaultSearchPrefs();
+
+  const engine = String(prefs.engine || "").trim().toLowerCase() || "google";
+  const customTemplate =
+    String(prefs.customTemplate || "").trim() || defaultSearchPrefs().customTemplate;
+
+  return { engine, customTemplate };
+}
+
+function engineToTemplate(engine, customTemplate) {
+  switch (engine) {
+    case "ddg":
+      return "https://duckduckgo.com/?q={q}";
+    case "brave":
+      return "https://search.brave.com/search?q={q}";
+    case "bing":
+      return "https://www.bing.com/search?q={q}";
+    case "kagi":
+      return "https://kagi.com/search?q={q}";
+    case "perplexity":
+      return "https://www.perplexity.ai/search?q={q}";
+    case "custom":
+      return customTemplate || defaultSearchPrefs().customTemplate;
+    case "google":
+    default:
+      return "https://www.google.com/search?q={q}";
+  }
+}
+
+function buildSearchUrl(q) {
+  const prefs = getSearchPrefs();
+  const template = engineToTemplate(prefs.engine, prefs.customTemplate);
+
+  // must include {q}; if not, fall back to google
+  if (!template.includes("{q}")) {
+    return `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+  }
+  return template.replaceAll("{q}", encodeURIComponent(q));
 }
 
 // ---------- Subtitle clock ----------
@@ -59,7 +108,7 @@ function setSubtitle() {
   const el = $("#subtitle");
   if (!el) return;
 
-  const prefs = getWeatherPrefs(); // uses WEATHER_KEY + defaultWeatherPrefs()
+  const prefs = getWeatherPrefs();
   const tz = prefs?.tz || "America/New_York";
 
   el.textContent = new Date().toLocaleString(undefined, {
@@ -85,74 +134,7 @@ function startSubtitleClock() {
   }, msUntilNextMinute);
 }
 
-// ---------- Search ----------
-function isLikelyUrl(text) {
-  const s = text.trim();
-  if (/^https?:\/\//i.test(s)) return true;
-  return !/\s/.test(s) && /\.[a-z]{2,}([/:?#]|$)/i.test(s);
-}
-
-function normalizeUrl(text) {
-  const s = text.trim();
-  return /^https?:\/\//i.test(s) ? s : `https://${s}`;
-}
-
-function defaultSearchPrefs() {
-  return {
-    engine: "google", // google | ddg | brave | bing | kagi | perplexity | custom
-    customTemplate: "https://www.google.com/search?q={q}",
-  };
-}
-
-function getSearchPrefs() {
-  const prefs = loadJSON(SEARCH_KEY, null);
-  if (!prefs || typeof prefs !== "object") return defaultSearchPrefs();
-
-  const engine = String(prefs.engine || "").trim().toLowerCase();
-  const customTemplate = String(prefs.customTemplate || "").trim();
-
-  return {
-    engine: engine || defaultSearchPrefs().engine,
-    customTemplate: customTemplate || defaultSearchPrefs().customTemplate,
-  };
-}
-
-function templateForEngine(engine, customTemplate) {
-  switch (engine) {
-    case "ddg":
-      return "https://duckduckgo.com/?q={q}";
-    case "brave":
-      return "https://search.brave.com/search?q={q}";
-    case "bing":
-      return "https://www.bing.com/search?q={q}";
-    case "kagi":
-      return "https://kagi.com/search?q={q}";
-    case "perplexity":
-      return "https://www.perplexity.ai/search?q={q}";
-    case "custom":
-      return customTemplate || defaultSearchPrefs().customTemplate;
-    case "google":
-    default:
-      return "https://www.google.com/search?q={q}";
-  }
-}
-
-function buildSearchUrl(q) {
-  const prefs = getSearchPrefs();
-  const tpl = templateForEngine(prefs.engine, prefs.customTemplate);
-
-  // Must contain {q}. If not, append it safely.
-  const hasToken = tpl.includes("{q}");
-  const encoded = encodeURIComponent((q || "").trim());
-
-  if (!hasToken) {
-    const join = tpl.includes("?") ? "&" : "?";
-    return `${tpl}${join}q=${encoded}`;
-  }
-
-  return tpl.replaceAll("{q}", encoded);
-}
-
+// ---------- Search bar ----------
 function initSearch() {
   const form = $("#searchForm");
   const input = $("#searchInput");
@@ -169,10 +151,10 @@ function initSearch() {
   requestAnimationFrame(focusSearch);
   window.addEventListener("load", focusSearch, { once: true });
 
-  // "/" focuses search unless typing in another field
+  // "/" focuses search
   window.addEventListener("keydown", (e) => {
     const tag = (document.activeElement?.tagName || "").toLowerCase();
-    const typing = tag === "input" || tag === "textarea";
+    const typing = tag === "input" || tag === "textarea" || tag === "select";
     if (e.key === "/" && !typing) {
       e.preventDefault();
       focusSearch();
@@ -184,64 +166,12 @@ function initSearch() {
     const text = (input.value || "").trim();
     if (!text) return;
 
-    window.location.href = isLikelyUrl(text)
-      ? normalizeUrl(text)
-      : buildSearchUrl(text);
+    // URL goes directly; otherwise use preferred engine
+    window.location.href = isLikelyUrl(text) ? normalizeUrl(text) : buildSearchUrl(text);
   });
 }
 
-// ---------- Links Grid ----------
-function defaultLinks() {
-  // Used only if no links exist yet.
-  return [
-    {
-      id: uuid(),
-      title: "Netflix",
-      url: "https://www.netflix.com",
-      icon: "tv",
-    },
-    {
-      id: uuid(),
-      title: "Google Drive",
-      url: "https://drive.google.com",
-      icon: "folder",
-    },
-    {
-      id: uuid(),
-      title: "Instagram",
-      url: "https://www.instagram.com",
-      icon: "camera",
-    },
-    {
-      id: uuid(),
-      title: "HBO Max",
-      url: "https://www.max.com",
-      icon: "play",
-    },
-    {
-      id: uuid(),
-      title: "Outlook",
-      url: "https://outlook.live.com",
-      icon: "mail",
-    },
-    {
-      id: uuid(),
-      title: "Zillow",
-      url: "https://www.zillow.com",
-      icon: "home",
-    },
-  ];
-}
-
-function getLinks() {
-  const links = loadJSON(LINKS_KEY, null);
-  if (Array.isArray(links) && links.length) return links;
-
-  const seeded = defaultLinks();
-  saveJSON(LINKS_KEY, seeded);
-  return seeded;
-}
-
+// ---------- Links grid ----------
 function iconSvg(kind) {
   const list = window.ICONS || [];
   const icon = list.find((i) => i.id === kind) || list.find((i) => i.id === "link");
@@ -254,8 +184,13 @@ function iconSvg(kind) {
   `;
 }
 
+function getLinks() {
+  const links = loadJSON(LINKS_KEY, []);
+  return Array.isArray(links) ? links : [];
+}
+
 function renderLinksGrid() {
-  const root = document.getElementById("linksGrid");
+  const root = $("#linksGrid");
   if (!root) return;
 
   const links = getLinks();
@@ -273,12 +208,11 @@ function renderLinksGrid() {
 
   links.forEach((l) => {
     const title = (l.title || "").trim() || "Untitled";
-    let url = (l.url || "").trim();
+    const icon = l.icon || "link";
+    let url = (l.url || "").trim() || "";
 
-    // If it's blank, send them to Settings so it doesn't feel dead.
+    // normalize
     if (!url) url = "/settings";
-
-    // If user omitted scheme but it looks like a domain, fix it.
     if (url !== "/settings" && !/^https?:\/\//i.test(url) && url.includes(".")) {
       url = "https://" + url;
     }
@@ -289,7 +223,7 @@ function renderLinksGrid() {
 
     a.innerHTML = `
       <div class="card-top">
-        <span class="icon" aria-hidden="true">${iconSvg(l.icon || "link")}</span>
+        <span class="icon" aria-hidden="true">${iconSvg(icon)}</span>
         <div class="card-title">${escapeHtml(title)}</div>
       </div>
     `;
@@ -298,7 +232,7 @@ function renderLinksGrid() {
   });
 }
 
-// ---------- Checklist State ----------
+// ---------- Checklist ----------
 function defaultState() {
   const now = Date.now();
   return {
@@ -313,26 +247,28 @@ function defaultState() {
 }
 
 function loadState() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return defaultState();
-    const parsed = JSON.parse(raw);
-    return {
-      active: Array.isArray(parsed.active) ? parsed.active : defaultState().active,
-      archived: Array.isArray(parsed.archived) ? parsed.archived : [],
-    };
-  } catch {
-    return defaultState();
-  }
+  const st = loadJSON(STORE_KEY, null);
+  if (!st || typeof st !== "object") return defaultState();
+  return {
+    active: Array.isArray(st.active) ? st.active : defaultState().active,
+    archived: Array.isArray(st.archived) ? st.archived : [],
+  };
 }
 
 function saveState(state) {
+  saveJSON(STORE_KEY, state);
+}
+
+function focusInputByTaskId(id) {
+  const inp = document.querySelector(`input[data-task-id="${id}"]`);
+  if (!inp) return;
+  inp.focus({ preventScroll: true });
+  const v = inp.value || "";
   try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    inp.setSelectionRange(v.length, v.length);
   } catch {}
 }
 
-// ---------- Checklist render ----------
 function renderActive(state) {
   const root = $("#todo");
   if (!root) return;
@@ -351,7 +287,6 @@ function renderActive(state) {
       t.pendingArchiveAt = t.checked ? Date.now() + 5000 : null;
       saveState(state);
       renderActive(state);
-      renderArchive(state);
     });
 
     const textWrap = document.createElement("div");
@@ -414,65 +349,6 @@ function renderActive(state) {
   });
 }
 
-function renderArchive(state) {
-  const list = $("#archiveList");
-  if (!list) return;
-
-  if (!state.archived.length) {
-    list.innerHTML = `<div class="archive-row">
-      <div class="archive-text" style="text-decoration:none;opacity:.55;">No completed tasks yet.</div>
-    </div>`;
-    return;
-  }
-
-  list.innerHTML = "";
-  state.archived
-    .slice()
-    .sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0))
-    .forEach((t) => {
-      const row = document.createElement("div");
-      row.className = "archive-row";
-
-      const text = document.createElement("div");
-      text.className = "archive-text";
-      text.textContent = t.text || "(empty)";
-
-      const restore = document.createElement("button");
-      restore.className = "archive-btn";
-      restore.type = "button";
-      restore.textContent = "Restore";
-      restore.addEventListener("click", () => {
-        state.archived = state.archived.filter((x) => x.id !== t.id);
-        state.active.unshift({
-          id: t.id,
-          text: t.text,
-          created: t.created || Date.now(),
-          checked: false,
-          pendingArchiveAt: null,
-        });
-        saveState(state);
-        renderArchive(state);
-        renderActive(state);
-        requestAnimationFrame(() => focusInputByTaskId(t.id));
-      });
-
-      const del = document.createElement("button");
-      del.className = "archive-btn";
-      del.type = "button";
-      del.textContent = "Delete";
-      del.addEventListener("click", () => {
-        state.archived = state.archived.filter((x) => x.id !== t.id);
-        saveState(state);
-        renderArchive(state);
-      });
-
-      row.appendChild(text);
-      row.appendChild(restore);
-      row.appendChild(del);
-      list.appendChild(row);
-    });
-}
-
 function tickArchive(state) {
   const now = Date.now();
   let moved = false;
@@ -495,37 +371,17 @@ function tickArchive(state) {
 
     saveState(state);
     renderActive(state);
-    renderArchive(state);
   }
-}
-
-// ---------- Modal ----------
-function openArchive() {
-  $("#archiveModal")?.setAttribute("aria-hidden", "false");
-}
-function closeArchive() {
-  $("#archiveModal")?.setAttribute("aria-hidden", "true");
 }
 
 // ---------- Weather ----------
 function defaultWeatherPrefs() {
-  // DEFAULT: Seattle
-  return {
-    name: "Seattle, WA, United States",
-    lat: 47.6062,
-    lon: -122.3321,
-    tz: "America/Los_Angeles",
-  };
+  return { name: "Seattle, WA, United States", lat: 47.6062, lon: -122.3321, tz: "America/Los_Angeles" };
 }
 
 function getWeatherPrefs() {
   const prefs = loadJSON(WEATHER_KEY, null);
-  if (
-    prefs &&
-    typeof prefs === "object" &&
-    typeof prefs.lat === "number" &&
-    typeof prefs.lon === "number"
-  ) {
+  if (prefs && typeof prefs === "object" && typeof prefs.lat === "number" && typeof prefs.lon === "number") {
     return {
       name: prefs.name || defaultWeatherPrefs().name,
       lat: prefs.lat,
@@ -549,9 +405,6 @@ function wxFromCode(code) {
 
 async function loadWeather() {
   const prefs = getWeatherPrefs();
-  const lat = prefs.lat;
-  const lon = prefs.lon;
-
   const cityPill = $("#weatherCity");
   if (cityPill) {
     const label = (prefs.name || "Weather").split(",")[0].trim();
@@ -560,7 +413,7 @@ async function loadWeather() {
 
   const url =
     "https://api.open-meteo.com/v1/forecast" +
-    `?latitude=${lat}&longitude=${lon}` +
+    `?latitude=${prefs.lat}&longitude=${prefs.lon}` +
     `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m` +
     `&daily=temperature_2m_max,temperature_2m_min` +
     `&temperature_unit=fahrenheit&wind_speed_unit=mph` +
@@ -602,38 +455,17 @@ async function loadWeather() {
   }
 }
 
-// ---------- Init ----------
+// ---------- init ----------
 (function init() {
-  window.renderVersionBadge?.();
-
   startSubtitleClock();
   initSearch();
-
-  // links grid
   renderLinksGrid();
 
-  // checklist
   const state = loadState();
   saveState(state);
-
   renderActive(state);
-  renderArchive(state);
-
-  $("#archiveBtn")?.addEventListener("click", openArchive);
-  $("#archiveClose")?.addEventListener("click", closeArchive);
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeArchive();
-  });
-
-  // 500ms is plenty and reduces churn vs 300ms
   setInterval(() => tickArchive(state), 500);
 
-  // weather
   loadWeather();
   setInterval(loadWeather, 20 * 60 * 1000);
 })();
-
-// Service worker
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js").catch(() => {});
-}

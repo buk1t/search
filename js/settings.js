@@ -1,4 +1,5 @@
-// settings.js
+// /js/settings.js
+// Settings page: search engine + weather city + links manager + archive inline + import/export
 
 const THEME_KEY = "home.theme.v1";
 const STORE_KEY = "home.state.v1";
@@ -8,8 +9,7 @@ const SEARCH_KEY = "home.search.v1";
 
 const $ = (sel) => document.querySelector(sel);
 
-// ----- Import / Export (prefix-based, plain text) -----
-
+// ----- Import / Export -----
 const EXPORT_PREFIX = "home.";
 
 function setMsg(text) {
@@ -33,10 +33,8 @@ function downloadText(filename, text) {
 }
 
 function toB64(str) {
-  // Handle unicode safely
   return btoa(unescape(encodeURIComponent(str)));
 }
-
 function fromB64(b64) {
   return decodeURIComponent(escape(atob(b64)));
 }
@@ -67,13 +65,10 @@ function exportSettingsPlainText() {
   }
 
   let body = meta;
-
   for (const k of keys) {
     const raw = localStorage.getItem(k);
     if (raw == null) continue;
-
-    const encoded = toB64(raw);
-    body += `[${k}]\n${encoded}\n\n`;
+    body += `[${k}]\n${toB64(raw)}\n\n`;
   }
 
   const stamp = new Date().toISOString().slice(0, 19).replaceAll(":", "-");
@@ -83,42 +78,34 @@ function exportSettingsPlainText() {
 
 function parsePlainTextExport(text) {
   const lines = String(text || "").split(/\r?\n/);
-
   const data = {};
   let currentKey = null;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
     if (!line || line.startsWith("#")) continue;
 
     if (line.startsWith("[") && line.endsWith("]")) {
       currentKey = line.slice(1, -1).trim();
       continue;
     }
-
     if (currentKey) {
       data[currentKey] = line;
       currentKey = null;
     }
   }
-
   return data;
 }
 
 function validateImportedTextMap(map) {
   if (!map || typeof map !== "object") return { ok: false, reason: "Bad file format." };
-
   const keys = Object.keys(map).filter((k) => k.startsWith(EXPORT_PREFIX));
   if (!keys.length) return { ok: false, reason: "No home.* keys found in file." };
 
   for (const k of keys) {
     const v = map[k];
-    if (typeof v !== "string" || v.length < 2) {
-      return { ok: false, reason: `Missing value for ${k}` };
-    }
+    if (typeof v !== "string" || v.length < 2) return { ok: false, reason: `Missing value for ${k}` };
   }
-
   return { ok: true, keys };
 }
 
@@ -132,14 +119,13 @@ async function importSettingsPlainTextFile(file) {
     return;
   }
 
-  // Overwrite ONLY home.* keys (also clears existing so removed keys disappear)
+  // clear all home.* first so deletions apply
   const existing = listPrefixedKeys(EXPORT_PREFIX);
   for (const k of existing) localStorage.removeItem(k);
 
   for (const k of v.keys) {
     try {
-      const raw = fromB64(map[k]);
-      localStorage.setItem(k, raw);
+      localStorage.setItem(k, fromB64(map[k]));
     } catch {
       setMsg(`Import failed: Could not decode ${k}`);
       return;
@@ -151,25 +137,14 @@ async function importSettingsPlainTextFile(file) {
 }
 
 function wireImportExport() {
-  const exportBtn = $("#exportBtn");
-  const importBtn = $("#importBtn");
-  const importFile = $("#importFile");
+  $("#exportBtn")?.addEventListener("click", exportSettingsPlainText);
 
-  exportBtn?.addEventListener("click", exportSettingsPlainText);
-
-  importBtn?.addEventListener("click", () => {
-    setMsg("");
-    importFile?.click();
-  });
-
-  importFile?.addEventListener("change", async () => {
-    const file = importFile.files?.[0];
-    importFile.value = ""; // allow importing same file again
+  $("#importFile")?.addEventListener("change", async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
 
-    const ok = confirm(
-      "Importing will overwrite ALL current home.* settings (links, weather, checklist, etc). Continue?"
-    );
+    const ok = confirm("Importing will overwrite ALL current home.* settings. Continue?");
     if (!ok) return;
 
     try {
@@ -221,30 +196,20 @@ function normalizeUrl(url) {
 }
 
 function iconSVG(iconId) {
-  const icon = ICONS.find((i) => i.id === iconId) || ICONS[0];
+  const icon = (window.ICONS || []).find((i) => i.id === iconId) || (window.ICONS || [])[0];
   return `
     <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      ${icon.path}
+      ${icon?.path || ""}
     </svg>
   `;
 }
 
 // =========================
-// NEW: Search Engine Setting
+// Search Engine Setting
 // =========================
-// Requires these optional elements in settings.html:
-//   #searchEngine (select)
-//   #searchCustom (input)
-//   #customSearchWrap (div)
-//   #currentSearchPill (pill)
-// If not present, this section does nothing.
-
 function defaultSearchPrefs() {
-  return {
-    engine: "google",
-    customTemplate: "https://www.google.com/search?q={q}",
-  };
+  return { engine: "google", customTemplate: "https://www.google.com/search?q={q}" };
 }
 
 function getSearchPrefs() {
@@ -268,21 +233,14 @@ function setSearchPrefs(next) {
 
 function prettyEngineName(engine) {
   switch (engine) {
-    case "ddg":
-      return "DuckDuckGo";
-    case "brave":
-      return "Brave";
-    case "bing":
-      return "Bing";
-    case "kagi":
-      return "Kagi";
-    case "perplexity":
-      return "Perplexity";
-    case "custom":
-      return "Custom";
+    case "ddg": return "DuckDuckGo";
+    case "brave": return "Brave";
+    case "bing": return "Bing";
+    case "kagi": return "Kagi";
+    case "perplexity": return "Perplexity";
+    case "custom": return "Custom";
     case "google":
-    default:
-      return "Google";
+    default: return "Google";
   }
 }
 
@@ -291,8 +249,7 @@ function syncSearchUI() {
   const wrap = $("#customSearchWrap");
   const inp = $("#searchCustom");
   const pill = $("#currentSearchPill");
-
-  if (!sel) return; // feature not present in HTML
+  if (!sel) return;
 
   const prefs = getSearchPrefs();
 
@@ -301,15 +258,13 @@ function syncSearchUI() {
 
   const showCustom = prefs.engine === "custom";
   if (wrap) wrap.style.display = showCustom ? "block" : "none";
-
   if (pill) pill.textContent = prettyEngineName(prefs.engine);
 }
 
 function wireSearchEngine() {
   const sel = $("#searchEngine");
   const inp = $("#searchCustom");
-
-  if (!sel) return; // feature not present in HTML
+  if (!sel) return;
 
   sel.addEventListener("change", () => {
     const prefs = getSearchPrefs();
@@ -327,12 +282,7 @@ function wireSearchEngine() {
 
 // ----- Weather -----
 function defaultWeatherPrefs() {
-  return {
-    name: "Seattle, WA, United States",
-    lat: 47.6062,
-    lon: -122.3321,
-    tz: "America/Los_Angeles",
-  };
+  return { name: "Seattle, WA, United States", lat: 47.6062, lon: -122.3321, tz: "America/Los_Angeles" };
 }
 
 function getWeatherPrefs() {
@@ -352,8 +302,7 @@ function setCityPill() {
   const pill = $("#currentCityPill");
   if (!pill) return;
   const prefs = getWeatherPrefs();
-  const label = (prefs.name || "Weather").split(",")[0].trim();
-  pill.textContent = label || "Weather";
+  pill.textContent = (prefs.name || "Weather").split(",")[0].trim() || "Weather";
 }
 
 async function searchCities(q) {
@@ -378,23 +327,14 @@ function renderCityResults(results) {
 
   root.innerHTML = results
     .map((r) => {
-      const full =
-        [r.name, r.admin1, r.country].filter(Boolean).join(", ") || "Unknown";
-      const shown = (full || "Weather").split(",")[0].trim();
-
+      const full = [r.name, r.admin1, r.country].filter(Boolean).join(", ") || "Unknown";
+      const shown = full.split(",")[0].trim();
       return `
         <button class="ghostbtn" type="button" data-city='${esc(
-          JSON.stringify({
-            name: full,
-            lat: r.latitude,
-            lon: r.longitude,
-            tz: r.timezone,
-          })
+          JSON.stringify({ name: full, lat: r.latitude, lon: r.longitude, tz: r.timezone })
         )}' style="width:100%; text-align:left; display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:10px;">
           <span style="font-weight:650;">${esc(shown)}</span>
-          <span style="font-size:12px; color:var(--muted);">${esc(
-            [r.admin1, r.country].filter(Boolean).join(", ")
-          )}</span>
+          <span style="font-size:12px; color:var(--muted);">${esc([r.admin1, r.country].filter(Boolean).join(", "))}</span>
         </button>
       `;
     })
@@ -424,7 +364,6 @@ function renderLinksList() {
   if (!root) return;
 
   const links = getLinks();
-
   if (!links.length) {
     root.innerHTML = `<div class="panel-sub">No links yet. Click “Add link”.</div>`;
     return;
@@ -475,7 +414,7 @@ function renderLinksList() {
   });
 }
 
-// ----- Archive (read-only + manage) -----
+// ----- Archive (inline) -----
 function loadChecklistState() {
   const st = loadJSON(STORE_KEY, null);
   if (!st || typeof st !== "object") return { active: [], archived: [] };
@@ -484,7 +423,6 @@ function loadChecklistState() {
     archived: Array.isArray(st.archived) ? st.archived : [],
   };
 }
-
 function saveChecklistState(st) {
   saveJSON(STORE_KEY, st);
 }
@@ -513,6 +451,8 @@ function renderArchive() {
 
       const text = document.createElement("div");
       text.className = "archive-text";
+      text.style.textDecoration = "none";
+      text.style.opacity = "0.9";
       text.textContent = t.text || "(empty)";
 
       const restore = document.createElement("button");
@@ -551,7 +491,23 @@ function renderArchive() {
     });
 }
 
-// ----- Link Modal -----
+function wireArchiveActions() {
+  $("#archiveRefreshBtn")?.addEventListener("click", renderArchive);
+
+  $("#archiveClearBtn")?.addEventListener("click", () => {
+    const st = loadChecklistState();
+    if (!st.archived?.length) return;
+
+    const ok = confirm("Clear ALL archived tasks? This cannot be undone.");
+    if (!ok) return;
+
+    st.archived = [];
+    saveChecklistState(st);
+    renderArchive();
+  });
+}
+
+// ----- Link Modal (optional: if you have it elsewhere, this stays safe) -----
 let editingIndex = null;
 let selectedIcon = "link";
 
@@ -559,15 +515,7 @@ function openModal() {
   const m = $("#linkModal");
   if (!m) return;
   m.setAttribute("aria-hidden", "false");
-
-  // prevent backdrop click from instantly closing when clicking inside card
-  const card = m.querySelector(".modal-card");
-  if (card && !card.__wired) {
-    card.__wired = true;
-    card.addEventListener("click", (e) => e.stopPropagation());
-  }
 }
-
 function closeModal() {
   $("#linkModal")?.setAttribute("aria-hidden", "true");
 }
@@ -576,6 +524,7 @@ function renderIconPicker() {
   const root = $("#iconPicker");
   if (!root) return;
 
+  const ICONS = window.ICONS || [];
   root.innerHTML = ICONS.map((ic) => {
     const on = ic.id === selectedIcon;
     return `
@@ -621,22 +570,20 @@ function openLinkModal(idx = null) {
 
   renderIconPicker();
   openModal();
-
-  requestAnimationFrame(() => {
-    $("#linkTitle")?.focus?.({ preventScroll: true });
-  });
+  requestAnimationFrame(() => $("#linkTitle")?.focus?.({ preventScroll: true }));
 }
 
 function saveLinkFromModal() {
   const t = ($("#linkTitle")?.value || "").trim();
   const uRaw = ($("#linkUrl")?.value || "").trim();
   const u = normalizeUrl(uRaw);
-  const links = getLinks();
 
   if (!u) {
     alert("Please enter a URL.");
     return;
   }
+
+  const links = getLinks();
 
   const linkObj = {
     id: editingIndex === null ? uuid() : (links[editingIndex]?.id || uuid()),
@@ -665,15 +612,15 @@ function deleteLinkFromModal() {
 // ----- Init -----
 (function init() {
   window.renderVersionBadge?.();
+
   setCityPill();
   renderLinksList();
   renderArchive();
+
   wireImportExport();
-
-  // NEW
   wireSearchEngine();
+  wireArchiveActions();
 
-  // weather search
   $("#cityForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const q = ($("#cityInput")?.value || "").trim();
@@ -687,18 +634,15 @@ function deleteLinkFromModal() {
     }
   });
 
-  // link modal wiring
+  // link modal wiring (only if modal exists)
   $("#addLinkBtn")?.addEventListener("click", () => openLinkModal(null));
-
   $("#linkModalClose")?.addEventListener("click", closeModal);
-
   $("#linkModalDone")?.addEventListener("click", () => {
     const url = ($("#linkUrl")?.value || "").trim();
     const title = ($("#linkTitle")?.value || "").trim();
     if (url || title) saveLinkFromModal();
     else closeModal();
   });
-
   $("#saveLinkBtn")?.addEventListener("click", saveLinkFromModal);
   $("#deleteLinkBtn")?.addEventListener("click", deleteLinkFromModal);
 
